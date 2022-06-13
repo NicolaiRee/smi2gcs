@@ -1,5 +1,6 @@
 # smi2cm5
-smi2cm5 lets you create atomic descriptors based on CM5 atomic charges computed using semiempirical tight binding (GFN1-xTB).
+smi2cm5 lets you create atomic descriptors from SMILES.
+The atomic descriptors are based on convolutions of CM5 atomic charges computed using semiempirical tight binding (GFN1-xTB).
 
 More information on this method is available in the [RegioML paper](https://doi.org/10.1039/D1DD00032B).
 
