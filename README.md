@@ -7,12 +7,13 @@ More information on this method is available in the [RegioML paper](https://doi.
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
--------------------------------------------------------------------------------------------
 
-### INSTALLATION ###
+# Installation
 
 We recommend using anaconda to install the Python 3 environment:
-conda env create -f environment.yml && conda activate hecksqm
+
+    conda env create -f environment.yml && conda activate smi2cm5
 
 Then download the binaries of xtb version 6.4.0:
-mkdir dep; cd dep; wget https://github.com/grimme-lab/xtb/releases/download/v6.4.0/xtb-210201.tar.xz; tar -xvf ./xtb-210201.tar.xz; cd ..
+
+    mkdir dep; cd dep; wget https://github.com/grimme-lab/xtb/releases/download/v6.4.0/xtb-210201.tar.xz; tar -xvf ./xtb-210201.tar.xz; cd ..
