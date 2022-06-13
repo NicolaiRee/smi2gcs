@@ -1,4 +1,4 @@
-name: hecksqm
+name: smi2cm5
 channels:
   - conda-forge
   - defaults
