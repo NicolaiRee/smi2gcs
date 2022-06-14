@@ -1,4 +1,4 @@
-name: smi2cm5
+name: smi2gcs
 channels:
   - conda-forge
   - defaults
