@@ -23,7 +23,7 @@
 import numpy as np
 import argparse
 from rdkit import Chem
-from DescriptorCreator.PrepAndCalcDescriptor import PrepAndCalcDescriptor
+from DescriptorCreator.PrepAndCalcDescriptor import Generator
 
 
 def parse_args():
@@ -42,15 +42,15 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    PrepAndCalcDescriptor = PrepAndCalcDescriptor()
+    generator = Generator()
     des =('GraphChargeShell', {'charge_type': 'cm5', 'n_shells': 5, 'use_cip_sort': True})
     
     #smiles = Chem.MolToSmiles(Chem.MolFromSmiles(args.smiles), isomericSmiles=True) # canonicalize input smiles
     smiles = args.smiles
     atom_sites = [int(i) for i in args.atom_sites.split(',')]
 
-    cm5_list = PrepAndCalcDescriptor.calc_CM5_charges(smiles, name=args.name, optimize=False, save_output=True)
-    atom_indices, descriptor_vector = PrepAndCalcDescriptor.create_descriptor_vector(atom_sites, des[0], **des[1])
+    cm5_list = generator.calc_CM5_charges(smiles, name=args.name, optimize=False, save_output=True)
+    atom_indices, descriptor_vector = generator.create_descriptor_vector(atom_sites, des[0], **des[1])
 
     print('SMILES:', smiles)
     print('Atom indices:', atom_indices)
