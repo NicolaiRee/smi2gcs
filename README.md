@@ -6,7 +6,7 @@ The atomic descriptors are based on convolutions of CM5 atomic charges computed 
   <img src="./GCS.png" height="400"/>
 </p>
 
-More information on this method is available in the [RegioML paper](https://doi.org/10.1039/D1DD00032B).
+More information about the method is available in the [RegioML paper](https://doi.org/10.1039/D1DD00032B).
 
 <a href="https://colab.research.google.com/drive/1n3hOlpv2hHXdis66fSq0GAWHjDq0LR0O?usp=sharing">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
