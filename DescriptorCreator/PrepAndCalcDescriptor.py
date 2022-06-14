@@ -19,10 +19,9 @@ MKL_NUM_THREADS = '1'
 
 
 
-class EASMolPreparation():
+class PrepAndCalcDescriptor():
     """
-    Class to implement the preparation of finding 
-    Electrophilic Aromatic Substitution (EAS) sites in molecules.
+    Class to generate atomic descriptors from SMILES.
     """
 
     def __init__(self):
