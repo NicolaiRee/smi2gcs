@@ -19,7 +19,7 @@ MKL_NUM_THREADS = '1'
 
 
 
-class PrepAndCalcDescriptor():
+class Generator():
     """
     Class to generate atomic descriptors from SMILES.
     """
@@ -48,7 +48,7 @@ class PrepAndCalcDescriptor():
 
     def _make_SQMroot(self):
         """
-        makes a pathname for the SQM calculations (xTB 6.4.0)
+        Make a pathname for the SQM calculations (xTB 6.4.0)
         :return: SQMroot
         """
         cwd = os.getcwd()
@@ -61,8 +61,7 @@ class PrepAndCalcDescriptor():
     def generate_3Dxyz(self, smi, name):
 
         # Smiles to RDKit mol object
-        self.rdkit_mol = Chem.MolFromSmiles(smi)
-        self.rdkit_mol = Chem.AddHs(self.rdkit_mol)
+        self.rdkit_mol = Chem.AddHs(Chem.MolFromSmiles(smi))
 
         # Embed mol object to get cartesian coordinates
         ps = AllChem.ETKDGv3()
@@ -90,9 +89,7 @@ class PrepAndCalcDescriptor():
 
     def calc_CM5_charges(self, smi, name='pred_mol', optimize=False, save_output=False):
         """
-        function to handling the quantum chemistry calculation
-        carries out xTB 6.4.1 single point localized orbitals (Foster-Boys) calculation
-        Linux OS is mandatory
+        Run GFN1-xTB calculations to obtain CM5 atomic charges.
         :parameter: optimize: if set to true, a GFN1-xTB (xTB version 6.4.0) geometry optimization is triggered.
         """
 
@@ -139,7 +136,8 @@ class PrepAndCalcDescriptor():
     def create_descriptor_vector(self, atom_sites, prop_name, **options):
         """
         Create the GraphChargeShell descriptor 
-        for all unique EAS sites in a molecule.
+        for atoms in the list atom_sites.
+        :parameter: atom_sites example: [0,1]
         :parameter: prop_name example: 'GraphChargeShell'
         :parameter: options example: {'charge_type': 'cm5', 'n_shells': 5, 'use_cip_sort': True}
         """
