@@ -1,6 +1,10 @@
 # SMI2GCS
-SMI2GCS lets you create atomic descriptors from SMILES.
+With SMI2GCS you can generate atomic descriptors from SMILES.
 The atomic descriptors are based on convolutions of CM5 atomic charges computed using semiempirical tight binding (GFN1-xTB).
+
+<p align="center">
+  <img src="./GCS.pdf" width="350" height="250"/>
+</p>
 
 More information on this method is available in the [RegioML paper](https://doi.org/10.1039/D1DD00032B).
 
