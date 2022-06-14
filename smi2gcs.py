@@ -45,7 +45,8 @@ if __name__ == "__main__":
     predictor = EASMolPreparation()
     des =('GraphChargeShell', {'charge_type': 'cm5', 'n_shells': 5, 'use_cip_sort': True})
     
-    smiles = Chem.MolToSmiles(Chem.MolFromSmiles(args.smiles), isomericSmiles=True) # canonicalize input smiles
+    #smiles = Chem.MolToSmiles(Chem.MolFromSmiles(args.smiles), isomericSmiles=True) # canonicalize input smiles
+    smiles = args.smiles
     atom_sites = [int(i) for i in args.atom_sites.split(',')]
 
     cm5_list = predictor.calc_CM5_charges(smiles, name=args.name, optimize=False, save_output=True)
