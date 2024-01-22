@@ -32,7 +32,6 @@ class GraphChargeShell(DescriptorElement):
 
         # set the atomic charge as the first element
         descriptor_elements = [float(atom.GetProp(charge))]
-        mapper = [atom.GetIdx()]
         contained_atoms = set()  # !! Indices need to be stored because obviously rdkit does not return references to same object
         contained_atoms.add(atom.GetIdx())
         last_shell.append(atom)
@@ -49,34 +48,24 @@ class GraphChargeShell(DescriptorElement):
                     # different address in memory. Thus I have to compare indices ....
                     if neighbour_atom.GetIdx() not in contained_atoms:
                         block.append(neighbour_atom)
-                
+                # Fill the block with dummy atoms, such that all blocks have the same length
+                self._fill_block(block, length)
                 # Sort the block according to the chosen sorting scheme
                 if self.cip:
                     self._sort_block_cip(block)
                 else:
                     self._sort_block(block)
-                
-                # Fill the block with dummy atoms, such that all blocks have the same length # <-- Moved this to after the CIP sorting
-                self._fill_block(block, length)
-
                 current_shell = current_shell + block
                 block = []
                 length = 3  # from the second shell on atoms only have 3 members because one is already contained
-
-                indices_block = [atm.GetIdx() for atm in current_shell]
-                contained_atoms.update(indices_block)  # <-- This avoided dublicates for symetric atoms in rings (PEDER update) 
-
             indices = [atm.GetIdx() for atm in current_shell]
-            #contained_atoms.update(indices) # <-- This created dublicates for symetric atoms in rings (PEDER update)
+            contained_atoms.update(indices)
             descriptor_elements += [float(atm.GetProp(charge)) for atm in current_shell]
-            mapper += indices
             last_shell = current_shell
             current_shell = []
         assert len(descriptor_elements) == self._calculate_length(self.n_shells), '{}  {}'.format(len(
             descriptor_elements),  self._calculate_length(self.n_shells))  # Debugging assertion
-        
-        #print('REMEMBER TO REFIX BLOCK!!!')
-        return descriptor_elements, mapper
+        return descriptor_elements
 
     @classmethod
     def _calculate_length(cls, n):
@@ -166,8 +155,7 @@ class GraphChargeShell(DescriptorElement):
                 for nbr in atom.GetNeighbors():
                     neighbour_sets[num].add(nbr.GetIdx())
             for num, neigbor_idx_set in enumerate(neighbour_sets):
-                # priorities[num] = sum([molecule.GetAtoms()[index].GetAtomicNum() for index in neighbour_sets[num]])
-                priorities[num] = sum([molecule.GetAtomWithIdx(index).GetAtomicNum() for index in neighbour_sets[num]])
+                priorities[num] = sum([molecule.GetAtoms()[index].GetAtomicNum() for index in neighbour_sets[num]])
             # Check new set cardinalities. If they did not change the loop needs to be aborted
             new_set_cardinalities = [len(s) for s in neighbour_sets]
             if new_set_cardinalities == old_set_caridnalities:

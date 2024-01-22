@@ -18,6 +18,7 @@ OMP_NUM_THREADS = '1'
 MKL_NUM_THREADS = '1'
 
 
+
 class Generator():
     """
     Class to generate atomic descriptors from SMILES.
@@ -47,7 +48,7 @@ class Generator():
 
     def _make_SQMroot(self):
         """
-        Make a pathname for the SQM calculations (xTB 6.6.0)
+        Make a pathname for the SQM calculations (xTB 6.4.0)
         :return: SQMroot
         """
         cwd = os.getcwd()
@@ -62,59 +63,19 @@ class Generator():
         # Smiles to RDKit mol object
         self.rdkit_mol = Chem.AddHs(Chem.MolFromSmiles(smi))
 
-        # Define new mol
-        new_mol = Chem.AddHs(Chem.MolFromSmiles(smi))
-
-        # Set conf parameters
-        rot_bond = Chem.rdMolDescriptors.CalcNumRotatableBonds(self.rdkit_mol)
-        n_conformers = min(1 + 3 * rot_bond, 20)
-
         # Embed mol object to get cartesian coordinates
         ps = AllChem.ETKDGv3()
         ps.randomSeed = 123
         ps.useSmallRingTorsions=True
-        try:
-            embed_out = AllChem.EmbedMultipleConfs(self.rdkit_mol, numConfs=n_conformers, params=ps)
-        except:
-            embed_out = -1
-        if embed_out == -1 or self.rdkit_mol.GetNumConformers() == 0:
+        if AllChem.EmbedMolecule(self.rdkit_mol, ps) == -1:
             print(f'1st embed failed for {name} with SMILES: {smi}; will try useRandomCoords=True')
             ps = AllChem.ETKDGv3()
             ps.randomSeed = 123
             ps.useSmallRingTorsions=True
             ps.useRandomCoords=True #added 21/6 - 2021
             # ps.maxIterations=1000 #added 21/6 - 2021
-            try:
-                embed_out = AllChem.EmbedMultipleConfs(self.rdkit_mol, numConfs=n_conformers, params=ps)
-            except:
-                embed_out = -1
-            if embed_out == -1 or self.rdkit_mol.GetNumConformers() == 0:
-                print(f'2nd embed failed for {name} with SMILES: {smi}; will try standard embed')
-                try:
-                    embed_out = AllChem.EmbedMultipleConfs(self.rdkit_mol, numConfs=n_conformers)
-                except:
-                    embed_out = -1
-                if embed_out == -1 or self.rdkit_mol.GetNumConformers() == 0:
-                    print(f'3rd embed failed for {name} with SMILES: {smi}; wil try ETDG')
-                    ps = AllChem.ETDG()
-                    ps.randomSeed = 123
-                    ps.useSmallRingTorsions=True
-                    # ps.useMacrocycleTorsions=True
-                    ps.ETversion=2
-                    ps.useBasicKnowledge=True
-                    try:
-                        embed_out = AllChem.EmbedMultipleConfs(self.rdkit_mol, numConfs=n_conformers, params=ps)
-                    except:
-                        embed_out = -1
-                    if embed_out == -1 or self.rdkit_mol.GetNumConformers() == 0:
-                        raise Exception(f'4th embed failed for {name} with SMILES: {smi}')
-        
-        # Optimize structure with FF and get the lowest energy conformer
-        energies = AllChem.MMFFOptimizeMoleculeConfs(self.rdkit_mol, maxIters=2000, nonBondedThresh=100.0)
-        energies_list = [e[1] for e in energies]
-        min_e_index = energies_list.index(min(energies_list))
-        new_mol.AddConformer(self.rdkit_mol.GetConformer(min_e_index))
-        self.rdkit_mol = new_mol
+            if AllChem.EmbedMolecule(self.rdkit_mol, ps) == -1:
+                raise Exception(f'2nd embed failed for {name} with SMILES: {smi}')
 
         # Make seperate directory for mol
         self.mol_calc_path = f'{self.SQMroot}/{name}'
