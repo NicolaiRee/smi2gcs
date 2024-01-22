@@ -119,7 +119,8 @@ class GraphChargeShell(DescriptorElement):
 
         assert len(block) <= length, 'There is a atom with more than 4 neighbours!\n{}'.format(block)
         while len(block) < length:
-            block.append(DummyA())
+            block.insert(0, DummyA())
+            # block.append(DummyA())
 
     def _sort_block(self, block):
         """ Sort the block according to partial charges only
@@ -174,8 +175,8 @@ class GraphChargeShell(DescriptorElement):
                 break
         # sort block according to priorities so that the block is synchronous with sorted priorities that
         # the next step can be conducted
-        block[:] = [elem for (prior, elem) in sorted(zip(priorities, block), key=lambda x:x[0], reverse=True)]
-        priorities.sort(reverse=True)
+        block[:] = [elem for (prior, elem) in sorted(zip(priorities, block), key=lambda x:x[0], reverse=False)]
+        priorities.sort(reverse=False)
         # Note that dummy atoms end up at the end of a block and need no further attendance because they will anyways
         # only produce zeroes in their sub graph
 
@@ -214,7 +215,7 @@ class GraphChargeShell(DescriptorElement):
             for index_set in sets_to_sort:
                 logging.debug('Index set: {}'.format(index_set))
                 orig_list = list(index_set)
-                sorted_list = sorted(orig_list, key=lambda a: float(block[a].GetProp(self.charge)), reverse=True)
+                sorted_list = sorted(orig_list, key=lambda a: float(block[a].GetProp(self.charge)), reverse=False)
                 combined = list(zip(orig_list, sorted_list))
                 for idx1, idx2 in combined:
                     mappings[idx1] = idx2
