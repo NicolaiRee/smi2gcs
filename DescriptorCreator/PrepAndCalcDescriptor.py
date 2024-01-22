@@ -193,7 +193,7 @@ class Generator():
             if atom.GetIdx() in atom_sites: 
                 atom_indices.append(atom.GetIdx())
 
-                atom_descriptor = self.descriptor_properties.calculate_elements(atom)
+                atom_descriptor = self.descriptor_properties.calculate_elements(atom)[0]
                 descriptor_vector.append(atom_descriptor)
         
         return atom_indices, descriptor_vector
