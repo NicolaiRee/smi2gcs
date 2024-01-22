@@ -50,14 +50,17 @@ class GraphChargeShell(DescriptorElement):
                     if neighbour_atom.GetIdx() not in contained_atoms:
                         block.append(neighbour_atom)
                 
+                # Fill the block with dummy atoms, such that all blocks have the same length
+                self._fill_block(block, length)
+
                 # Sort the block according to the chosen sorting scheme
                 if self.cip:
                     self._sort_block_cip(block)
                 else:
                     self._sort_block(block)
                 
-                # Fill the block with dummy atoms, such that all blocks have the same length # <-- Moved this to after the CIP sorting
-                self._fill_block(block, length)
+                # # Fill the block with dummy atoms, such that all blocks have the same length # <-- Moved this to after the CIP sorting
+                # self._fill_block(block, length)
 
                 current_shell = current_shell + block
                 block = []
@@ -168,15 +171,16 @@ class GraphChargeShell(DescriptorElement):
                     neighbour_sets[num].add(nbr.GetIdx())
             for num, neigbor_idx_set in enumerate(neighbour_sets):
                 # priorities[num] = sum([molecule.GetAtoms()[index].GetAtomicNum() for index in neighbour_sets[num]])
-                priorities[num] = sum([molecule.GetAtomWithIdx(index).GetAtomicNum() for index in neighbour_sets[num]])
+                # priorities[num] = sum([molecule.GetAtomWithIdx(index).GetAtomicNum() for index in neighbour_sets[num]])
+                priorities[num] = sum([molecule.GetAtomWithIdx(index).GetAtomicNum() if index != -1 else -10 for index in neighbour_sets[num]])
             # Check new set cardinalities. If they did not change the loop needs to be aborted
             new_set_cardinalities = [len(s) for s in neighbour_sets]
             if new_set_cardinalities == old_set_caridnalities:
                 break
         # sort block according to priorities so that the block is synchronous with sorted priorities that
         # the next step can be conducted
-        block[:] = [elem for (prior, elem) in sorted(zip(priorities, block), key=lambda x:x[0], reverse=False)]
-        priorities.sort(reverse=False)
+        block[:] = [elem for (prior, elem) in sorted(zip(priorities, block), key=lambda x:x[0], reverse=True)]
+        priorities.sort(reverse=True)
         # Note that dummy atoms end up at the end of a block and need no further attendance because they will anyways
         # only produce zeroes in their sub graph
 
@@ -215,7 +219,7 @@ class GraphChargeShell(DescriptorElement):
             for index_set in sets_to_sort:
                 logging.debug('Index set: {}'.format(index_set))
                 orig_list = list(index_set)
-                sorted_list = sorted(orig_list, key=lambda a: float(block[a].GetProp(self.charge)), reverse=False)
+                sorted_list = sorted(orig_list, key=lambda a: float(block[a].GetProp(self.charge)), reverse=True)
                 combined = list(zip(orig_list, sorted_list))
                 for idx1, idx2 in combined:
                     mappings[idx1] = idx2
