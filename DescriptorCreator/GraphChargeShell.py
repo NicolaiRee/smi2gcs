@@ -174,8 +174,8 @@ class GraphChargeShell(DescriptorElement):
                 break
         # sort block according to priorities so that the block is synchronous with sorted priorities that
         # the next step can be conducted
-        block[:] = [elem for (prior, elem) in sorted(zip(priorities, block), key=lambda x:x[0])]
-        priorities.sort()
+        block[:] = [elem for (prior, elem) in sorted(zip(priorities, block), key=lambda x:x[0], reverse=True)]
+        priorities.sort(reverse=True)
         # Note that dummy atoms end up at the end of a block and need no further attendance because they will anyways
         # only produce zeroes in their sub graph
 
@@ -214,7 +214,7 @@ class GraphChargeShell(DescriptorElement):
             for index_set in sets_to_sort:
                 logging.debug('Index set: {}'.format(index_set))
                 orig_list = list(index_set)
-                sorted_list = sorted(orig_list, key=lambda a: float(block[a].GetProp(self.charge)))
+                sorted_list = sorted(orig_list, key=lambda a: float(block[a].GetProp(self.charge)), reverse=True)
                 combined = list(zip(orig_list, sorted_list))
                 for idx1, idx2 in combined:
                     mappings[idx1] = idx2
