@@ -27,7 +27,7 @@ Then download the binaries of xtb version 6.4.0:
 
 # Details on the sorting algorithm
 
-Sort each shell according to a modified version of the Cahn-Ingold-Prelog (CIP) priority rules and the input properties if CIP is unambiguous:
+Sort each shell according to a modified version of the Cahn-Ingold-Prelog (CIP) priority rules and the CM5 charges if CIP is unambiguous:
 
 1) Sort according to atomic number in descending order.
 2) If (1) is not unique, for each atom with the same priority (A*):
@@ -36,7 +36,7 @@ Sort each shell according to a modified version of the Cahn-Ingold-Prelog (CIP) 
     <li>If (2i) did not give an unambiguous result expand the shell of each atom A* by one bond.</li>
     <li>Repeat (2ii) until a unique order is found.</li>
   </ol>
-3) If no unique order is found in (2) and all bound atoms are included, then sort atoms according to the input properties in descending order.
+3) If no unique order is found in (2) and all bound atoms are included, then sort atoms according to the CM5 charges in descending order.
 
 
 ## Citation 
