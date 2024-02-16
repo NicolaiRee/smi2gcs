@@ -1,198 +1,216 @@
-import copy
-import logging
-import numpy as np
-from itertools import groupby
+# MIT License
+#
+# Copyright (c) 2024 Nicolai Ree
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-from DescriptorCreator.DescriptorElement import DescriptorElement
+import os
+import subprocess
+from rdkit import Chem
+from rdkit.Chem import AllChem
+
+from DescriptorCreator.NodeDescGenerator import NodeDescGenerator
+
+# xTB path and calc setup
+XTBHOME = '/Users/nicolairee/opt/miniforge3/envs/alfabet'
+XTBPATH = os.path.join(XTBHOME, 'share/xtb')
+MANPATH = os.path.join(XTBHOME, 'share/man')
+LD_LIBRARY_PATH = os.path.join(XTBHOME, 'lib')
+
+# path = os.getcwd()
+# XTBHOME = os.path.join(path, 'dep/xtb-6.4.0')
+# XTBPATH = os.path.join(path, 'dep/xtb-6.4.0/share/xtb')
+# MANPATH = os.path.join(path, 'dep/xtb-6.4.0/share/man')
+# LD_LIBRARY_PATH = os.path.join(path, 'dep/xtb-6.4.0/lib')
+
+OMP_NUM_THREADS = '1'
+MKL_NUM_THREADS = '1'
 
 
-class GraphChargeShell(DescriptorElement):
+class GraphChargeShell():
+    """
+    Class to generate atomic descriptors from SMILES.
+    """
 
-    description = 'Charge shell based on sorted molecular graph'
+    def __init__(self):
+       
+        # Make seperate directory for descritptor calculations
+        self.SQMroot = self._make_SQMroot()
+        if not os.path.exists(self.SQMroot):
+            os.mkdir(self.SQMroot)
 
-    def __init__(self, **options):
-        super(GraphChargeShell, self).__init__()
-        self.n_shells = options.pop('n_shells')
-        self.charge = options.pop('charge_type')
-        self.cip = options.pop('use_cip_sort', False) # USE Cahn Ingold Prelog Type rules for sorting. If False, then sort purely based on charge
-        self._current_mol = None
+        # Set env parameters for xTB        
+        global XTBHOME
+        global XTBPATH
+        global MANPATH
+        global LD_LIBRARY_PATH
+        global OMP_NUM_THREADS
+        global MKL_NUM_THREADS
+        os.environ['XTBHOME'] = XTBHOME
+        os.environ['XTBPATH'] = XTBPATH
+        os.environ['MANPATH'] = MANPATH
+        os.environ['LD_LIBRARY_PATH'] = LD_LIBRARY_PATH
+        os.environ["OMP_NUM_THREADS"] = OMP_NUM_THREADS
+        os.environ['MKL_NUM_THREADS'] = MKL_NUM_THREADS
 
-    def calculate_elements(self, atom):
-        charge = self.charge
-        self._current_mol = atom.GetOwningMol()
-        last_shell = []
-        current_shell = []
-        block = []  # Corresponds to a block of atoms which then have to be sorted, could be sourced to a own class
 
-        # set the atomic charge as the first element
-        descriptor_elements = [float(atom.GetProp(charge))]
-        mapper = [atom.GetIdx()]
-        contained_atoms = set()  # Store atom indices of all processed atoms
-        contained_atoms.add(atom.GetIdx())
-        last_shell.append(atom)
+    def _make_SQMroot(self):
+        """
+        Make a pathname for the SQM calculations (GFN1-xTB)
+        :return: SQMroot
+        """
+        cwd = os.getcwd()
+        SQMroot = cwd + '/' + 'calculations'
+        print(f'SQM folder is: \n{SQMroot}')
+        return SQMroot
 
-        length = 4  # first atom has 4 neighbours
-        for shell in range(self.n_shells):
-            for ls_atom in last_shell:
-                # loop through shell and create next shell
-                # create and sort subshells / blocks
-                for neighbour_atom in ls_atom.GetNeighbors():
-                    if neighbour_atom.GetIdx() not in contained_atoms:
-                        block.append(neighbour_atom)
 
-                # Sort the block according to the chosen sorting scheme
-                if len(block):
-                    if self.cip:
-                        block = self._sort_block_cip(block, contained_atoms)
-                    else:
-                        block = self._sort_block(block)
-                
-                # Fill the block with dummy atoms, such that all blocks have the same length
-                self._fill_block(block, length)
+    def generate_3Dxyz(self, smi, name):
 
-                current_shell = current_shell + block
-                block = []
-                length = 3  # from the second shell on atoms only have 3 members because one is already contained
+        # Smiles to RDKit mol object
+        self.rdkit_mol = Chem.AddHs(Chem.MolFromSmiles(smi))
 
-                indices_block = [atm.GetIdx() for atm in current_shell]
-                contained_atoms.update(indices_block) 
+        # Define new mol
+        new_mol = Chem.AddHs(Chem.MolFromSmiles(smi))
 
-            indices = [atm.GetIdx() for atm in current_shell]
-            descriptor_elements += [float(atm.GetProp(charge)) for atm in current_shell]
-            mapper += indices
-            last_shell = current_shell
-            current_shell = []
-        assert len(descriptor_elements) == self._calculate_length(self.n_shells), '{}  {}'.format(len(
-            descriptor_elements),  self._calculate_length(self.n_shells))  # Debugging assertion
+        # Set conf parameters
+        rot_bond = Chem.rdMolDescriptors.CalcNumRotatableBonds(self.rdkit_mol)
+        n_conformers = min(1 + 3 * rot_bond, 20)
+
+        # Embed mol object to get cartesian coordinates
+        ps = AllChem.ETKDGv3()
+        ps.randomSeed = 123
+        ps.useSmallRingTorsions=True
+        try:
+            embed_out = AllChem.EmbedMultipleConfs(self.rdkit_mol, numConfs=n_conformers, params=ps)
+        except:
+            embed_out = -1
+        if embed_out == -1 or self.rdkit_mol.GetNumConformers() == 0:
+            print(f'1st embed failed for {name} with SMILES: {smi}; will try useRandomCoords=True')
+            ps = AllChem.ETKDGv3()
+            ps.randomSeed = 123
+            ps.useSmallRingTorsions=True
+            ps.useRandomCoords=True #added 21/6 - 2021
+            # ps.maxIterations=1000 #added 21/6 - 2021
+            try:
+                embed_out = AllChem.EmbedMultipleConfs(self.rdkit_mol, numConfs=n_conformers, params=ps)
+            except:
+                embed_out = -1
+            if embed_out == -1 or self.rdkit_mol.GetNumConformers() == 0:
+                print(f'2nd embed failed for {name} with SMILES: {smi}; will try standard embed')
+                try:
+                    embed_out = AllChem.EmbedMultipleConfs(self.rdkit_mol, numConfs=n_conformers)
+                except:
+                    embed_out = -1
+                if embed_out == -1 or self.rdkit_mol.GetNumConformers() == 0:
+                    print(f'3rd embed failed for {name} with SMILES: {smi}; wil try ETDG')
+                    ps = AllChem.ETDG()
+                    ps.randomSeed = 123
+                    ps.useSmallRingTorsions=True
+                    # ps.useMacrocycleTorsions=True
+                    ps.ETversion=2
+                    ps.useBasicKnowledge=True
+                    try:
+                        embed_out = AllChem.EmbedMultipleConfs(self.rdkit_mol, numConfs=n_conformers, params=ps)
+                    except:
+                        embed_out = -1
+                    if embed_out == -1 or self.rdkit_mol.GetNumConformers() == 0:
+                        raise Exception(f'4th embed failed for {name} with SMILES: {smi}')
         
-        return descriptor_elements, mapper
+        # Optimize structure with FF and get the lowest energy conformer
+        energies = AllChem.MMFFOptimizeMoleculeConfs(self.rdkit_mol, maxIters=2000, nonBondedThresh=100.0)
+        energies_list = [e[1] for e in energies]
+        min_e_index = energies_list.index(min(energies_list))
+        new_mol.AddConformer(self.rdkit_mol.GetConformer(min_e_index))
+        self.rdkit_mol = new_mol
 
-
-    @classmethod
-    def _calculate_length(cls, n):
-        result = 5
-        previous_shell = 4
-        m = 1
-        while m < n:
-            result += 3*previous_shell
-            previous_shell = 3*previous_shell
-            m += 1
-        return result
-
-
-    def _fill_block(self, block, length):
-        """ Fills block with dummy atoms to length and than further sends it to the sorting routine
-        :param block: block containing the atoms to sort
-        :param length: the length to which the block should be filled with dummy atoms
-        :return:
-        """
-
-        class DummyA(object):
-            def __init__(self):
-                self.charge = 0.0
-            
-            @classmethod
-            def GetNeighbors(cls):
-                return []
-
-            @classmethod
-            def GetIdx(cls):
-                return -1
-
-            def GetProp(self, charge):
-                return self.charge
-
-        assert len(block) <= length, 'There is a atom with more than 4 neighbours!\n{}'.format(block)
-        while len(block) < length:
-            block.append(DummyA())
-
-
-    def _sort_block(self, block):
-        """ Sort the block according to charges in descending order.
-        :param block: Block of Atoms that need to be sorted (type: list)
-        :type block: list
-        :return: sorted block (type: list)
-        """
-        block = sorted(block, key=lambda atom: float(atom.GetProp(self.charge)), reverse=True)
-        return block
-    
-
-    def _expand_shell(self, atom_list, contained_atoms):
-        subgraph_temp = []
-        priorities = 0
-
-        for atom in atom_list:
-            for nbr in atom.GetNeighbors():
-                if nbr.GetIdx() not in contained_atoms:
-                    subgraph_temp.append(nbr)
-                    priorities += nbr.GetAtomicNum()
-
-        return subgraph_temp, priorities
-
-
-    def _sort_block_cip(self, block, contained_atoms):
-        """ Sort block according to CIP rules and charges if CIP is unambiguous
-
-        Sorting according to the CIP rules works as follows:
-        1) Take all bound substituents and sort according to atomic number in descending order.
-        2) If 1 is not unique, for each atom with same priority (A*):
-            a) Go to bound and yet not included atoms and sum up atomic numbers. Set priority of A* according to summed atomic numbers.
-            b) If 2 a) did not give unambiguous result expand shell of each atom A* by one bond.
-            c) repeat 2b) until unique order is found.
-            d) If no unique order is found and all bound atoms are included (in set of already summed in atoms)
-                sort atoms according to charge in descending order (this is an arbitrary choice).
-
-        :param block: Block of Atoms that need to be sorted
-        :type block: list
-        :return: CIP sorted block (type: list)
-        """
+        # Make seperate directory for mol
+        self.mol_calc_path = f'{self.SQMroot}/{name}'
+        if not os.path.exists(self.mol_calc_path):
+            os.mkdir(self.mol_calc_path)
         
-        logging.debug('Entering CIP determination routine')
-        logging.debug(f'Length of block: {len(block)}')
+        # Mol object to xyz file
+        self.xyz_file_path = f'{self.mol_calc_path}/{name}.xyz'
+        Chem.rdmolfiles.MolToXYZFile(self.rdkit_mol, self.xyz_file_path)
 
-        contained_atoms_in_sort = set(contained_atoms)
-        contained_atoms_in_sort.update(atom.GetIdx() for atom in block)
-        logging.debug(f'Contained atoms in sort: {contained_atoms_in_sort}')
 
-        subgraphs = [[atm] for atm in block]
-        priorities = [atm.GetAtomicNum() for atm in block]
+    def calc_CM5_charges(self, smi, name='pred_mol', optimize=False, save_output=False):
+        """
+        Run GFN1-xTB calculations to obtain CM5 atomic charges.
+        :parameter optimize: if set to true, a GFN1-xTB geometry optimization is triggered.
+        """
 
-        while len(priorities) != len(set(priorities)):
-            old_priorities = copy.deepcopy(priorities)
+        # Generate xyz file from SMILES
+        self.generate_3Dxyz(smi, name)
 
-            for num, atom_list in enumerate(subgraphs):
-                subgraph_temp, priority_temp = self._expand_shell(atom_list, contained_atoms_in_sort)
-                subgraphs[num] = subgraph_temp
-                priorities[num] += priority_temp
+        # Get molecule properties
+        chrg = Chem.GetFormalCharge(self.rdkit_mol)
+        spin = 0 #spin hardcoded to zero
 
-            contained_atoms_in_sort.update(atom.GetIdx() for atom in np.concatenate(subgraphs))
+        # Run xTB calc
+        if optimize:
+            cmd = f'{XTBHOME}/bin/xtb --gfn 1 {self.xyz_file_path} --opt --lmo --chrg {chrg} --uhf {spin}' #TODO! add connectivity check!
+        else:
+            cmd = f'{XTBHOME}/bin/xtb --gfn 1 {self.xyz_file_path} --lmo --chrg {chrg} --uhf {spin}'
+        
+        proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, cwd=self.mol_calc_path)
+        output = proc.communicate()[0]
+        
+        # Save calc output
+        if save_output:
+            with open(f'{self.mol_calc_path}/xtb.out', 'w') as f:
+                f.write(output)
 
-            if priorities == old_priorities:
-                logging.debug(f'No unique order found: {priorities}, {list(set(priorities))}')
+        # Get CM5 charges from output and append CM5 charges to RDKit mol object 
+        self.cm5_list = []
+        natoms = int(self.rdkit_mol.GetNumAtoms())
+        for line_idx, line in enumerate(output.split('\n')):
+            if 'Mulliken/CM5' in line:
+                start = line_idx + 1
+                endindex = start + natoms
+                for i in range(start, endindex):
+                    line = output.split('\n')[i]
+                    cm5_atom = float(line.split()[2])
+                    self.cm5_list.append(cm5_atom)
                 break
-
-        # Sort block according the priorities
-        priorities, block = zip(*sorted(zip(priorities, block), key=lambda x:x[0], reverse=True))
-        priorities, block = list(priorities), list(block)
-        logging.debug(f'Priorities after sort: {priorities}')
         
-        # Now check if all the priorities are different and if not 
-        # sort those with the same priorities according to the charge in descending order
-        if len(priorities) != len(set(priorities)):
-            logging.debug(f'Charges before sorting: {[atom.GetProp(self.charge) for atom in block]}')
+        return self.cm5_list
 
-            # Group atoms with the same priority p=[(8,atom1),(8,atom2),(1,atom3)] --> [[(8,atom1),(8,atom2)], [(1,atom3)]]
-            sets_to_sort = [list(j) for i, j in groupby(zip(priorities,block), key=lambda x:x[0])]
-            logging.debug(f'Grouped atoms (idx): {[list(np.array(list(j))[:,1]) for i, j in groupby(zip(priorities,[atom.GetIdx() for atom in block]), key=lambda x:x[0])]}')
 
-            # Sort grouped atoms according to the charge in descending order 
-            sorted_block = []
-            for index_set in sets_to_sort:
-                sub_block = [x[1] for x in index_set]
-                sorted_block.extend(sorted(sub_block, key=lambda atom:float(atom.GetProp(self.charge)), reverse=True))
-            
-            assert len(sorted_block) == len(block)
-            block = sorted_block
-            logging.debug(f'Charges after sorting: {[atom.GetProp(self.charge) for atom in block]}')
+    def create_descriptor_vector(self, atom_sites, n_shells=5, max_neighbors=4, use_cip_sort=True):
+        """
+        Create the GraphChargeShell descriptor for atoms in the list atom_sites.
+        :parameter atom_sites example: [0,1]
+        """
 
-        return block
+        NodeDescGen = NodeDescGenerator(molobj = self.rdkit_mol,
+                                        property_list = self.cm5_list,
+                                        n_shells = n_shells,
+                                        max_neighbors = max_neighbors,
+                                        use_cip_sort = use_cip_sort)
+
+        # Create descriptor vector only for the provided atom sites     
+        descriptor_vector = []
+        mapper_vector = []
+        for atom in atom_sites:
+            atom_descriptor, atom_mapper = NodeDescGen.calculate_descriptor(atom)
+            descriptor_vector.append(atom_descriptor)
+            mapper_vector.append(atom_mapper)
+        
+        return descriptor_vector, mapper_vector

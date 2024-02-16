@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2022 Nicolai Ree
+# Copyright (c) 2024 Nicolai Ree
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,8 @@
 import numpy as np
 import argparse
 from rdkit import Chem
-from DescriptorCreator.PrepAndCalcDescriptor import Generator
+
+from DescriptorCreator.GraphChargeShell import GraphChargeShell
 
 
 def parse_args():
@@ -34,7 +35,7 @@ def parse_args():
     parser.add_argument('-s', '--smiles', default='c1(ccno1)C',
                         help='SMILES representation of the molecule for which the atomic descriptors are to be generated')
     parser.add_argument('-a', '--atom_sites', default='0,1', help='A list of atom indices for which atomic descriptors are to be generated')
-    parser.add_argument('-n', '--name', default='test_mol', help='The name of the molecule')
+    parser.add_argument('-n', '--name', default='testmol', help='The name of the molecule')
     return parser.parse_args()
 
 
@@ -42,19 +43,14 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    generator = Generator()
-    des =('GraphChargeShell', {'charge_type': 'cm5', 'n_shells': 5, 'use_cip_sort': True})
+    gcs_generator = GraphChargeShell()
     
-    #smiles = Chem.MolToSmiles(Chem.MolFromSmiles(args.smiles), isomericSmiles=True) # canonicalize input smiles
     smiles = args.smiles
     atom_sites = [int(i) for i in args.atom_sites.split(',')]
-
-    cm5_list = generator.calc_CM5_charges(smiles, name=args.name, optimize=False, save_output=True)
-    atom_indices, descriptor_vector = generator.create_descriptor_vector(atom_sites, des[0], **des[1])
+    
+    cm5_list = gcs_generator.calc_CM5_charges(smiles, name=args.name, optimize=False, save_output=True)
+    descriptor_vector, mapper_vector = gcs_generator.create_descriptor_vector(atom_sites, n_shells=5, max_neighbors=4, use_cip_sort=True)
 
     print('SMILES:', smiles)
-    print('Atom indices:', atom_indices)
+    print('Atom indices:', atom_sites)
     print('Atom descriptors', descriptor_vector)
-
-
-

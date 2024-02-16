@@ -134,7 +134,7 @@ class Generator():
     def calc_CM5_charges(self, smi, name='pred_mol', optimize=False, save_output=False):
         """
         Run GFN1-xTB calculations to obtain CM5 atomic charges.
-        :parameter: optimize: if set to true, a GFN1-xTB (xTB version 6.4.0) geometry optimization is triggered.
+        :parameter optimize: if set to true, a GFN1-xTB (xTB version 6.4.0) geometry optimization is triggered.
         """
 
         # Generate xyz file from SMILES
@@ -181,9 +181,9 @@ class Generator():
         """
         Create the GraphChargeShell descriptor 
         for atoms in the list atom_sites.
-        :parameter: atom_sites example: [0,1]
-        :parameter: prop_name example: 'GraphChargeShell'
-        :parameter: options example: {'charge_type': 'cm5', 'n_shells': 5, 'use_cip_sort': True}
+        :parameter atom_sites example: [0,1]
+        :parameter prop_name example: 'GraphChargeShell'
+        :parameter options example: {'charge_type': 'cm5', 'n_shells': 5, 'use_cip_sort': True}
         """
         
         if prop_name == 'GraphChargeShell':
