@@ -30,16 +30,16 @@ Then download the binaries of xtb version 6.4.0:
 Sort each shell according to a modified version of the Cahn-Ingold-Prelog (CIP) priority rules and the input properties if CIP is unambiguous:
 
 1) Sort according to atomic number in descending order.
-2) If (1) is not unique, for each atom with same priority (A*):
-    a) Go to bound and yet not included atoms and sum up atomic numbers. Set priority of A* according to summed atomic numbers.
-    b) If (2a) did not give unambiguous result expand shell of each atom A* by one bond.
-    c) repeat (2b) until unique order is found.
-3) If no unique order is found in (2) and all bound atoms are included, then sort atoms according to the input properties in descending order (this is an arbitrary choice).
+2) If (1) is not unique, for each atom with the same priority (A*):
+   <ol>
+    <li>Go to bound and yet not included atoms and sum up atomic numbers. Set the priority of A* according to summed atomic numbers.</li>
+    <li>If (2i) did not give an unambiguous result expand the shell of each atom A* by one bond.</li>
+    <li>Repeat (2ii) until a unique order is found.</li>
+  </ol>
+3) If no unique order is found in (2) and all bound atoms are included, then sort atoms according to the input properties in descending order.
 
 
 ## Citation 
-
-Our work is open access on [Digital Discovery](https://doi.org/10.1039/D3DD00224A), where more information is available.
 ```
 @article{Ree2022,
   title = {RegioML: predicting the regioselectivity of electrophilic aromatic substitution reactions using machine learning},
