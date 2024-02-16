@@ -32,7 +32,7 @@ _logger.setLevel(logging.WARNING)
 
 class NodeDescGenerator():
     """Generate node descriptors based on 
-       Cahn Ingold Prelog (CIP) or numerical sorting 
+       Cahn-Ingold-Prelog (CIP) or numerical sorting 
        of node features in a graph.
     """
 
