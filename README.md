@@ -14,7 +14,7 @@ Including: [1](https://doi.org/10.1002/cmdc.201700097), [2](https://doi.org/10.1
 </a>
 
 
-# Installation
+## Installation
 
 We recommend using anaconda to install the Python 3 environment:
 
@@ -25,7 +25,7 @@ Then download the binaries of xtb version 6.4.0:
     mkdir dep; cd dep; wget https://github.com/grimme-lab/xtb/releases/download/v6.4.0/xtb-210201.tar.xz; tar -xvf ./xtb-210201.tar.xz; cd ..
 
 
-# Details on the sorting algorithm
+## Details on the sorting algorithm
 
 Sort each shell according to a modified version of the Cahn-Ingold-Prelog (CIP) priority rules and the CM5 charges if CIP is unambiguous:
 
