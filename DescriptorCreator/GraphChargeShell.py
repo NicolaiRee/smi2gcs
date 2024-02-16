@@ -28,16 +28,11 @@ from rdkit.Chem import AllChem
 from DescriptorCreator.NodeDescGenerator import NodeDescGenerator
 
 # xTB path and calc setup
-XTBHOME = '/Users/nicolairee/opt/miniforge3/envs/alfabet'
-XTBPATH = os.path.join(XTBHOME, 'share/xtb')
-MANPATH = os.path.join(XTBHOME, 'share/man')
-LD_LIBRARY_PATH = os.path.join(XTBHOME, 'lib')
-
-# path = os.getcwd()
-# XTBHOME = os.path.join(path, 'dep/xtb-6.4.0')
-# XTBPATH = os.path.join(path, 'dep/xtb-6.4.0/share/xtb')
-# MANPATH = os.path.join(path, 'dep/xtb-6.4.0/share/man')
-# LD_LIBRARY_PATH = os.path.join(path, 'dep/xtb-6.4.0/lib')
+path = os.getcwd()
+XTBHOME = os.path.join(path, 'dep/xtb-6.4.0')
+XTBPATH = os.path.join(path, 'dep/xtb-6.4.0/share/xtb')
+MANPATH = os.path.join(path, 'dep/xtb-6.4.0/share/man')
+LD_LIBRARY_PATH = os.path.join(path, 'dep/xtb-6.4.0/lib')
 
 OMP_NUM_THREADS = '1'
 MKL_NUM_THREADS = '1'

@@ -146,12 +146,12 @@ class NodeDescGenerator():
         """ Sort block according to CIP rules and input properties if CIP is unambiguous
     
             Sorting according to the CIP rules works as follows:
-            1) Take all bound atoms and sort according to atomic number in descending order.
-            2) If (1) is not unique, for each atom with same priority (A*):
-                a) Go to bound and yet not included atoms and sum up atomic numbers. Set priority of A* according to summed atomic numbers.
-                b) If (2a) did not give unambiguous result expand shell of each atom A* by one bond.
-                c) repeat (2b) until unique order is found.
-            3) If no unique order is found in (2) and all bound atoms are included, then
+            1) Sort according to atomic number in descending order.
+            2) If (1) is not unique, for each atom with the same priority (A*):
+                a) Go to bound and yet not included atoms and sum up atomic numbers. Set the priority of A* according to summed atomic numbers.
+                b) If (2a) did not give an unambiguous result expand the shell of each atom A* by one bond.
+                c) repeat (2b) until a unique order is found.
+            3) If no unique order is found in (2) and all bound atoms are included, then 
             sort atoms according to the input properties in descending order (this is an arbitrary choice).
         """
 
