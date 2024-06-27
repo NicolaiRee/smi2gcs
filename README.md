@@ -31,7 +31,7 @@ Sort each shell according to a modified version of the Cahn-Ingold-Prelog (CIP) 
 
 1) Sort according to atomic number in descending order.
 2) If (1) is not unique, for each atom with the same priority (A*):
-    <ol><li>Go to bound and yet not included atoms and sum up atomic numbers. Set the priority of A* according to summed atomic numbers.</li>
+    <ol><li>Go to bound and yet not included atoms and sum up atomic numbers. Set the priority of A* according to the sum of the atomic numbers.</li>
     <li>If (2i) did not give an unambiguous result expand the shell of each atom A* by one bond.</li>
     <li>Repeat (2ii) until a unique order is found.</li></ol>
 3) If no unique order is found in (2) and all bound atoms are included, then sort atoms according to the CM5 charges in descending order.
